@@ -1,12 +1,7 @@
-# Magical Web Servers
+# Python at the Point - Talks
 
-## Date(s) of talk
-May 11, 2017
+## Browse the directories above for the code used in our talks
 
+## History
 
-## Synopsis
-
- - Just making a simple web server/service
- - Going over some HTTP verbs, ie GET, PUT, PATCH, POST and DELETE
- - Some common responses (html/image/json)
- - Integrate it with our LastFM Collage maker!
+(https://github.com/PythonAtThePoint/code/tree/master/B002_Magical_Web_Servers)[History]
