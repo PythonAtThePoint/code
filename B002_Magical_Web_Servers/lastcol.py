@@ -2,6 +2,8 @@ import random
 from PIL import Image, ImageDraw, ImageFont
 import requests
 import sys
+import os
+from urllib.parse import urlparse
 
 
 class LastFMError(Exception):
@@ -9,16 +11,17 @@ class LastFMError(Exception):
 
 
 class LastFMImage:
-    def __init__(self, username):
+    def __init__(self, username, col=3, row=3):
         self.url = "http://ws.audioscrobbler.com/2.0/"
         self.method = "user.gettopartists"
         self.user = username or "alairock"
-        self.api_key = '301a3a6d4301644d5a078e7f1fac0e78'
-        self.limit = 9
+        self.api_key = os.getenv('LASTFM_KEY',
+                                 '301a3a6d4301644d5a078e7f1fac0e78')
+        self.limit = int(col) * int(row)
         self.period = '3month'
         self.cache_path = '/Users/alairock/Desktop/demo'
         self.path = None
-        self._create_collage()
+        self._create_collage(cols=col, rows=row)
 
     def _get_body(self):
         return {
@@ -40,19 +43,30 @@ class LastFMImage:
         artists = r.json()['topartists']['artist']
         return artists
 
-    def _download_file(self, url):
-        no = random.randint(1, 1000)
-        path = self.cache_path + "/" + 'newfile+{no}.jpg'.format(no=no)
+    @staticmethod
+    def _download_file(url, path):
         with open(path, 'wb') as f:
-            resp = requests.get(url)
-            f.write(resp.content)
+            try:
+                content = requests.get(url).content
+                f.write(content)
+            except:
+                image = Image.new('RGB', (500, 500))
+                image.save(path)
+        return path
+
+    def _get_image_from_cache(self, url):
+        url_parts = urlparse(url)
+        cache_name = str(url_parts.path).replace('/', '')
+        if os.path.isfile(self.cache_path+'/'+cache_name):
+            return self.cache_path+'/'+cache_name
+        path = self._download_file(url, self.cache_path+'/'+cache_name)
         return path
 
     def _get_images(self, artists):
         image_info = []
         for artist in artists:
             url = artist['image'][3]['#text']
-            path = self._download_file(url)
+            path = self._get_image_from_cache(url)
             spot_info = {
                 'name': artist['name'],
                 'path': path,
@@ -72,8 +86,8 @@ class LastFMImage:
         artists = self.get_artists()
         images = self._get_images(artists)
         w, h = Image.open(images[0]['path']).size
-        collage_width = cols * w
-        collage_height = rows * h
+        collage_width = int(cols) * int(w)
+        collage_height = int(rows) * int(h)
         final_image = Image.new('RGB', (collage_width, collage_height))
         cursor = (0, 0)
         for image in images:
